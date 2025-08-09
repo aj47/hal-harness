@@ -431,7 +431,7 @@ hal-eval --benchmark swebench_verified_mini \
 Notes:
 - Ensure Docker Desktop is running. On macOS, the harness will auto-detect Docker Desktop’s socket if /var/run/docker.sock is missing.
 - Authenticate Auggie once (e.g., `auggie --login`) or provide env credentials.
-- Optionally choose a model: add `-A model_name=<model>`. For example: `-A model_name=gpt-4o-mini-2024-07-18`.
+- Optionally choose a model: add `-A model_name=<model>`. For example: `-A model_name=gpt-4o-mini-2024-07-18` or `-A model_name=sonnet4` for Claude Sonnet 4.
 
 
   --max_concurrent 5

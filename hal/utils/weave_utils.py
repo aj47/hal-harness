@@ -79,9 +79,9 @@ MODEL_PRICES_DICT = {
                 "bedrock/us.anthropic.claude-3-sonnet-20240229-v1:0": {"prompt_tokens": 0.003/1e3, "completion_tokens": 0.015/1e3},
                 "us.anthropic.anthropic.claude-3-sonnet-20240229-v1:0" : {"prompt_tokens": 0.003/1e3, "completion_tokens": 0.015/1e3},
                 "bedrock/us.anthropic.claude-3-5-haiku-20241022-v1:0": {"prompt_tokens": 0.0008/1e3, "completion_tokens": 0.004/1e3},
-                "us.anthropic.claude-3-5-haiku-20241022-v1:0" : {"prompt_tokens": 0.0008/1e3, "completion_tokens": 0.004/1e3}, 
+                "us.anthropic.claude-3-5-haiku-20241022-v1:0" : {"prompt_tokens": 0.0008/1e3, "completion_tokens": 0.004/1e3},
                 "bedrock/us.meta.llama3-3-70b-instruct-v1:0": {"prompt_tokens": 0.00072/1e3, "completion_tokens": 0.00072/1e3},
-                "us.meta.llama3-3-70b-instruct-v1:0" : {"prompt_tokens": 0.00072/1e3, "completion_tokens": 0.00072/1e3}, 
+                "us.meta.llama3-3-70b-instruct-v1:0" : {"prompt_tokens": 0.00072/1e3, "completion_tokens": 0.00072/1e3},
                 "claude-3-7-sonnet-20250219" : {"prompt_tokens": 3/1e6, "completion_tokens": 15/1e6},
                 "anthropic/claude-3-7-sonnet-20250219" : {"prompt_tokens": 3/1e6, "completion_tokens": 15/1e6},
                 "deepseek-ai/DeepSeek-V3": {"prompt_tokens": 1.25/1e6, "completion_tokens": 1.25/1e6},
@@ -104,6 +104,9 @@ MODEL_PRICES_DICT = {
                 "claude-opus-4.1-20250805": {"prompt_tokens": 15/1e6, "completion_tokens": 75/1e6},
                 "gpt-5": {"prompt_tokens": 1.25/1e6, "completion_tokens": 10/1e6},
                 "gpt-5-2025-08-07": {"prompt_tokens": 1.25/1e6, "completion_tokens": 10/1e6},
+                    "grok4": {"prompt_tokens": 5/1e6, "completion_tokens": 20/1e6},
+                    "sonnet4": {"prompt_tokens": 3/1e6, "completion_tokens": 15/1e6},
+
 }
 
 def fetch_weave_calls(client) -> List[Dict[str, Any]]:
@@ -113,7 +116,7 @@ def fetch_weave_calls(client) -> List[Dict[str, Any]]:
         "filter": {"trace_roots_only": False},
         "sort_by": [{"field":"started_at","direction":"desc"}],
     }))
-    
+
     return calls
 
 def get_call_ids(task_id, client):
@@ -145,18 +148,18 @@ def find_usage_dict_recursive(data):
 # def calculate_costs(usage_calls: List[Dict[str, Any]]) -> Tuple[float, Dict[str, Dict[str, int]]]:
 #     """Calculate total costs and token usage from processed calls"""
 #     unique_model_names = set(model_name for call in usage_calls for model_name in call)
-    
+
 #     print("USAGE CALLS 153", usage_calls)
 #     # Validate models
 #     for model_name in unique_model_names:
 #         if model_name not in MODEL_PRICES_DICT:
 #             raise KeyError(f"Model '{model_name}' not found in MODEL_PRICES_DICT.")
-    
+
 #     total_cost = 0
 #     token_usage = {model: {"prompt_tokens": 0, "completion_tokens": 0} for model in unique_model_names}
-    
+
 #     for call in usage_calls:
-        
+
 #         for model_name in call:
 #             if 'prompt_tokens' in call[model_name] and 'completion_tokens' in call[model_name]:
 #                 # Standard call
@@ -207,30 +210,30 @@ def get_total_cost(client):
             except KeyError as e:
                 print("No usage data found for call:", call)
                 continue
-            for k, cost in usage_items:   
+            for k, cost in usage_items:
                 if k not in token_usage:
                     token_usage[k] = {"prompt_tokens": 0, "completion_tokens": 0}
-                
+
                 requests += cost["requests"]
                 if "prompt_tokens" in cost:
                     token_usage[k]["prompt_tokens"] += cost["prompt_tokens"]
-                if "input_tokens" in cost:    
+                if "input_tokens" in cost:
                     token_usage[k]["prompt_tokens"] += cost["input_tokens"]
                 if "cache_creation_input_tokens" in cost:
                     token_usage[k]["prompt_tokens"] += cost["cache_creation_input_tokens"]
                 if "cache_read_input_tokens" in cost:
                     token_usage[k]["prompt_tokens"] += cost["cache_read_input_tokens"]
-                    
+
                 if "completion_tokens" in cost:
                     token_usage[k]["completion_tokens"] += cost["completion_tokens"]
                 if "output_tokens" in cost:
                     token_usage[k]["completion_tokens"] += cost["output_tokens"]
             progress.update(task, advance=1)
-            
+
     total_cost = sum(token_usage[k]["prompt_tokens"] * MODEL_PRICES_DICT[k]["prompt_tokens"] + token_usage[k]["completion_tokens"] * MODEL_PRICES_DICT[k]["completion_tokens"] for k in token_usage)
     return total_cost, token_usage
 
-            
+
 def comput_cost_from_inspect_usage(usage: Dict[str, Dict[str, int]], skip_models: List[str] = []) -> float:
     """Compute cost from token usage"""
     return sum(MODEL_PRICES_DICT[model_name]["prompt_tokens"] * usage[model_name]["input_tokens"] +
@@ -251,37 +254,37 @@ def process_weave_output(call: Dict[str, Any]) -> Dict[str, Any]:
     except Exception as e:
         print("Exception processing trace of call:", call)
         ended_at = None
-    
+
     json_call = call.dict()
     json_call['started_at'] = started_at
     json_call['ended_at'] = ended_at
     json_call['weave_task_id'] = call.attributes['weave_task_id']
     json_call['created_timestamp'] = started_at
-    
+
     return json_call
 
 def get_weave_calls(client) -> Tuple[List[Dict[str, Any]], str, str]:
     """Get processed Weave calls with progress tracking"""
     print_step("Getting Weave traces (this can take a while)...")
-    
+
     # dict to store latency for each task
     latency_dict = {}
-    
+
     with create_progress() as progress:
         # Fetch calls
         task1 = progress.add_task("Fetching Weave calls...", total=1)
         calls = fetch_weave_calls(client)
         progress.update(task1, completed=1)
-        
+
         # Processed calls
         processed_calls = []
-        
+
         for call in calls:
             task_id = call.attributes['weave_task_id']
             processed_call = process_weave_output(call)
             if processed_call:
                 processed_calls.append(processed_call)
-                
+
                 if task_id not in latency_dict:
                     latency_dict[task_id] = {'first_call_timestamp': processed_call['started_at'], 'last_call_timestamp': processed_call['started_at']}
                 else:
@@ -289,31 +292,31 @@ def get_weave_calls(client) -> Tuple[List[Dict[str, Any]], str, str]:
                         latency_dict[task_id]['first_call_timestamp'] = processed_call['started_at']
                     if processed_call['started_at'] > latency_dict[task_id]['last_call_timestamp']:
                         latency_dict[task_id]['last_call_timestamp'] = processed_call['started_at']
-                    
+
             progress.update(task1, advance=1)
-            
+
     for task_id in latency_dict:
         latency_dict[task_id]['total_time'] = (datetime.fromisoformat(latency_dict[task_id]['last_call_timestamp']) - datetime.fromisoformat(latency_dict[task_id]['first_call_timestamp'])).total_seconds()
-    
+
     console.print(f"[green]Total Weave traces: {len(processed_calls)}[/]")
     return processed_calls, latency_dict
 
 # def get_total_cost(client) -> Tuple[Optional[float], Dict[str, Dict[str, int]]]:
 #     """Get total cost and token usage for all Weave calls"""
 #     print_step("Calculating total cost...")
-    
+
 #     with create_progress() as progress:
 #         # Fetch calls
 #         task1 = progress.add_task("Fetching Weave calls...", total=1)
 #         calls = fetch_weave_calls(client)
 #         progress.update(task1, completed=1)
-        
+
 #         try:
 #             # Process calls and calculate costs
 #             total_cost, token_usage = process_usage_data(calls, progress)
 #             console.print(f"[green]Total cost: ${total_cost:.6f}[/]")
 #             return total_cost, token_usage
-            
+
 #         except KeyError as e:
 #             print_warning(f"Error calculating costs: {str(e)}")
 #             return None, {
@@ -326,12 +329,12 @@ def get_weave_calls(client) -> Tuple[List[Dict[str, Any]], str, str]:
 #     with create_progress() as progress:
 #         task = progress.add_task("Checking task ID logging...", total=1)
 #         calls = fetch_weave_calls(client)
-        
+
 #         for call in calls:
 #             if str(call['attributes'].get('weave_task_id')) == str(weave_task_id):
 #                 progress.update(task, completed=1)
 #                 return True
-                
+
 #         progress.update(task, completed=1)
 #         raise AssertionError(
 #             "Task ID not logged or incorrect ID for test run. "
@@ -343,9 +346,9 @@ def get_weave_calls(client) -> Tuple[List[Dict[str, Any]], str, str]:
 #     """Process usage data from Weave calls"""
 #     usage_calls = []
 #     unique_model_names = set()
-    
+
 #     task = progress.add_task("Processing usage data...", total=len(calls))
-    
+
 #     for call in calls:
 #         try:
 #             # find the usage in call
@@ -354,11 +357,11 @@ def get_weave_calls(client) -> Tuple[List[Dict[str, Any]], str, str]:
 #             usage_dicts = find_usage_dict_recursive(call_dump)
 #             for usage_dict in usage_dicts:
 #                 usage_calls.append(usage_dict)
-            
+
 #         except (KeyError, TypeError) as e:
 #             print_warning(f"Error processing call: {str(e)}")
 #         progress.update(task, advance=1)
-    
+
 #     return calculate_costs(usage_calls)
 
 
@@ -387,11 +390,11 @@ def get_weave_calls(client) -> Tuple[List[Dict[str, Any]], str, str]:
 def get_task_cost(run_id: str, task_id: str) -> dict:
     """
     Calculate the cost for a specific task ID by filtering calls with that task_id.
-    
+
     Args:
         run_id: The ID of the run to calculate costs for
         task_id: The ID of the task to calculate costs for
-        
+
     Returns:
         dict: A dictionary containing:
             - total_cost: The total cost in dollars
@@ -402,41 +405,41 @@ def get_task_cost(run_id: str, task_id: str) -> dict:
     total_cost = 0
     token_usage = {}
     requests = 0
-    
+
     client = weave.init(run_id)
 
     print_step(f"Getting token usage data for task ID: {task_id}...")
-    
+
     # Fetch all calls and filter by task_id
     calls = list(client.get_calls(filter={"trace_roots_only": False}, include_costs=False))
     task_calls = [call for call in calls if call.attributes.get('weave_task_id') == task_id]
-    
+
     for call in task_calls:
         # If the call has usage data, add it to the token usage
         try:
             usage_items = call.summary["usage"].items()
         except KeyError:
             continue
-            
-        for k, cost in usage_items:   
+
+        for k, cost in usage_items:
             if k not in token_usage:
                 token_usage[k] = {"prompt_tokens": 0, "completion_tokens": 0}
-            
+
             requests += cost["requests"]
             if "prompt_tokens" in cost:
                 token_usage[k]["prompt_tokens"] += cost["prompt_tokens"]
-            if "input_tokens" in cost:    
+            if "input_tokens" in cost:
                 token_usage[k]["prompt_tokens"] += cost["input_tokens"]
             if "cache_creation_input_tokens" in cost:
                 token_usage[k]["prompt_tokens"] += cost["cache_creation_input_tokens"]
             if "cache_read_input_tokens" in cost:
                 token_usage[k]["prompt_tokens"] += cost["cache_read_input_tokens"]
-                
+
             if "completion_tokens" in cost:
                 token_usage[k]["completion_tokens"] += cost["completion_tokens"]
             if "output_tokens" in cost:
                 token_usage[k]["completion_tokens"] += cost["output_tokens"]
-    
+
     # Calculate total cost from token usage
     for k in token_usage:
         if k in MODEL_PRICES_DICT:
