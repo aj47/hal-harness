@@ -1,0 +1,2 @@
+# Intentionally left blank; Auggie is a CLI dependency provided outside Python.
+
