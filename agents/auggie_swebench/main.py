@@ -67,7 +67,7 @@ def run(input_data: Dict[str, Any], **kwargs) -> Dict[str, str]:
             "- Avoid formatting-only changes.\n"
         )
         # Run Auggie in non-interactive mode but operate on the workspace files
-        # We still rely on git diff for the actual patch, so we ignore stdout.
+        # Stream Auggie output live to parent stdout (captured by caller/tee)
         cmd = [
             "auggie",
             "--workspace-root", workdir,
@@ -79,17 +79,11 @@ def run(input_data: Dict[str, Any], **kwargs) -> Dict[str, str]:
             cmd += ["--model", str(model)]
         timeout_s = int(kwargs.get("timeout_seconds", 480))
         try:
-            proc = subprocess.run(cmd, text=True, capture_output=True, check=False, timeout=timeout_s)
+            proc = subprocess.run(cmd, text=True, check=False, timeout=timeout_s)
         except subprocess.TimeoutExpired:
             return {instance_id: "ERROR: Auggie timed out"}
-        # Persist auggie stdout/stderr for debugging
-        with open(os.path.join(workdir, "auggie_stdout.txt"), "w") as _f:
-            _f.write(proc.stdout or "")
-        with open(os.path.join(workdir, "auggie_stderr.txt"), "w") as _f:
-            _f.write(proc.stderr or "")
         if proc.returncode != 0:
-            err = (proc.stderr or proc.stdout or "Auggie failed").strip()
-            return {instance_id: f"ERROR: {err}"}
+            return {instance_id: "ERROR: Auggie failed (non-zero exit)"}
 
         # 3) Produce a unified diff of changes
         # Stage all changes (include new/deleted files), then diff from index
