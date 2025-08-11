@@ -49,17 +49,23 @@ jobs:
     - name: Install Micromamba
       run: |
         # Download and install micromamba using the official installer
-        curl -Ls https://micro.mamba.pm/install.sh | bash -s -- -b -p ~/micromamba
+        curl -Ls https://micro.mamba.pm/install.sh | bash
         # Add to PATH for this session
         export PATH="~/.local/bin:$PATH"
         # Initialize micromamba
-        ~/.local/bin/micromamba shell init -s bash -p ~/micromamba
+        ~/.local/bin/micromamba shell init -s bash -r ~/micromamba
+        # Source the bashrc to activate micromamba
+        source ~/.bashrc
         # Verify installation
         ~/.local/bin/micromamba --version
     
     - name: Create evaluation environment
       run: |
+        # Source bashrc to ensure micromamba is available
+        source ~/.bashrc
+        # Create environment
         ~/.local/bin/micromamba create -y -n swebench_hal python=3.11
+        # Install swebench
         ~/.local/bin/micromamba run -n swebench_hal pip install -e src/swebench
         # Verify installation
         ~/.local/bin/micromamba run -n swebench_hal python -c "import swebench; print('SWE-bench installed successfully')"
@@ -79,14 +85,17 @@ jobs:
     
     - name: Run SWE-bench evaluation
       run: |
+        # Source bashrc to ensure micromamba is available
+        source ~/.bashrc
+
         PREDICTIONS_PATH="results/${{ github.event.inputs.run_id }}/${{ github.event.inputs.run_id }}_SWE_BENCH_SUBMISSIONS.jsonl"
-        
+
         echo "Starting SWE-bench evaluation..."
         echo "Run ID: ${{ github.event.inputs.run_id }}"
         echo "Max workers: ${{ github.event.inputs.max_workers }}"
         echo "Timeout: ${{ github.event.inputs.timeout }}"
         echo "Predictions path: $PREDICTIONS_PATH"
-        
+
         ~/.local/bin/micromamba run -n swebench_hal python -m swebench.harness.run_evaluation \
           --dataset_name princeton-nlp/SWE-bench_Lite \
           --predictions_path "$PREDICTIONS_PATH" \
