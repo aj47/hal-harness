@@ -74,7 +74,7 @@ This repository provides a standardized evaluation harness for reproducible agen
    Add your API keys (HuggingFace, Weave, OpenAI/other LLMs as needed) to the `.env` file. See `.env.template` for details.
 
 5. **Install Model Provider Dependencies:**
-   
+
    You'll need to install the appropriate Python SDK for your chosen model provider:
 
    ```bash
@@ -95,15 +95,15 @@ This repository provides a standardized evaluation harness for reproducible agen
    SSH_PRIVATE_KEY_PATH=/path/to/your/ssh/key
    NETWORK_SECURITY_GROUP_NAME=your_nsg_name
    ```
-   
+
    Then run the following command to install the optional azure dependencies:
    ```bash
    pip install -e .[azure]
    ```
-   
+
 7. **Optional: Docker Setup**
    If you plan to use Docker containers for isolated evaluation, make sure Docker is installed on your system. The harness will automatically build the required Docker image.
-   
+
 
 ## Which Benchmarks Are Supported?
 
@@ -121,7 +121,7 @@ pip install -e .[swebench]
 ```
 
 You will also need to **install docker** following the instructions [here](https://docs.docker.com/engine/install/). Docker is used during evaluation to run the SWE-bench tasks. For linux users, you will also need to complete the linux post-installation steps [here](https://docs.docker.com/engine/install/linux-postinstall/).
- 
+
 
 ### [USACO](https://github.com/princeton-nlp/USACO)
 - Programming competition problems
@@ -133,7 +133,7 @@ For USACO, you will need to download and extract the USACO dataset. This can be 
 2. Unzip the dataset and move the `data` directory to `hal/benchmarks/USACO/`. Hence there should be a `data/` directory in `hal/benchmarks/USACO/`
 
 You will also need to **install docker** following the instructions [here](https://docs.docker.com/engine/install/). Docker is used during evaluation to run the USACO tasks. For linux users, you will also need to complete the linux post-installation steps [here](https://docs.docker.com/engine/install/linux-postinstall/).
- 
+
 ### [AppWorld](https://appworld.dev/)
 - A Controllable World of Apps and People for Benchmarking Interactive Coding Agents
 
@@ -165,7 +165,7 @@ pip install -e .[taubench]
 
 ### [SciCode](https://github.com/scicode-bench/SciCode)
 - Programming realistic scientific research problems
-- Supports three versions: 
+- Supports three versions:
   1. `scicode` : standard version from the paper where agent solves subtasks iteratively
   2. `scicode_easy` : agent solves subtasks iteratively but has access to additional background information
   3. `scicode_hard` : agent solves each full problem in a zero-shot format
@@ -181,7 +181,7 @@ pip install -e .[scicode]
 ```
 
 ### [AssistantBench](https://github.com/oriyor/assistantbench)
-- Benchmark evaluating an agent's ability to solve realistic and time-consuming web search tasks. 
+- Benchmark evaluating an agent's ability to solve realistic and time-consuming web search tasks.
 - Evaluation uses scoring system from [BrowserGym](https://github.com/ServiceNow/BrowserGym)
 
 ### [Inspect AI Benchmarks](https://github.com/UKGovernmentBEIS/inspect_ai)
@@ -418,6 +418,22 @@ hal-eval --benchmark swebench_verified_mini \
   --agent_function main.run \
   --agent_name "My Agent (gpt-4o-mini-2024-07-18)" \
   -A model_name=gpt-4o-mini-2024-07-18 \
+
+2. **Running a single SWE-bench instance with Auggie (minimal default settings):**
+```bash
+hal-eval --benchmark swebench_verified_mini \
+  --agent_dir agents/auggie_swebench \
+  --agent_function main.run \
+  --agent_name "Auggie" \
+  --max_concurrent 1 \
+  --max_tasks 1
+```
+Notes:
+- Ensure Docker Desktop is running. On macOS, the harness will auto-detect Docker Desktop’s socket if /var/run/docker.sock is missing.
+- Authenticate Auggie once (e.g., `auggie --login`) or provide env credentials.
+- Optionally choose a model: add `-A model_name=<model>`. For example: `-A model_name=gpt-4o-mini-2024-07-18` or `-A model_name=sonnet4` for Claude Sonnet 4.
+
+
   --max_concurrent 5
 ```
 
@@ -527,15 +543,15 @@ Results can be uploaded to the [Holistic Agent Leaderboard (HAL)](https://hal.cs
    ```
 
 2. **After Evaluation:**
-For submitting results to the leaderboard, upload the files ending with `_UPLOAD.json` located in the generatedrun directories `results/<benchmark_name>/<run_id>/`. There are multiple ways to do this. 
+For submitting results to the leaderboard, upload the files ending with `_UPLOAD.json` located in the generatedrun directories `results/<benchmark_name>/<run_id>/`. There are multiple ways to do this.
 
    ```bash
    # Upload all results for a benchmark (this will upload all files ending with `_UPLOAD.json` in the run directories for the benchmark)
    hal-upload -B <benchmark_name>
-   
+
    # Upload a single file
    hal-upload -F path/to/<run_id>_UPLOAD.json
-   
+
    # Upload all files in a directory you point to (you can move the files you want to this directory and then upload)
    hal-upload -D path/to/directory
    ```
