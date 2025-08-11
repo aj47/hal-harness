@@ -26,6 +26,27 @@ jobs:
       uses: actions/checkout@v4
       with:
         lfs: true  # Enable Git LFS for large files
+        submodules: recursive  # Initialize git submodules
+
+    - name: Setup SWE-bench source
+      run: |
+        # Check if SWE-bench is properly set up
+        if [ ! -f "src/swebench/setup.py" ] && [ ! -f "src/swebench/pyproject.toml" ]; then
+          echo "SWE-bench source not found, cloning from repository..."
+          rm -rf src/swebench
+          git clone https://github.com/princeton-nlp/SWE-bench.git src/swebench
+        else
+          echo "SWE-bench source found"
+        fi
+
+        # Verify setup files exist
+        ls -la src/swebench/
+        if [ -f "src/swebench/setup.py" ]; then
+          echo "setup.py found"
+        fi
+        if [ -f "src/swebench/pyproject.toml" ]; then
+          echo "pyproject.toml found"
+        fi
     
     - name: Set up Docker
       run: |
