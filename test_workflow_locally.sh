@@ -130,8 +130,7 @@ echo "  --dataset_name princeton-nlp/SWE-bench_Lite \\"
 echo "  --predictions_path \"$PREDICTIONS_PATH\" \\"
 echo "  --max_workers $MAX_WORKERS \\"
 echo "  --run_id $RUN_ID \\"
-echo "  --timeout $TIMEOUT \\"
-echo "  --verbose"
+echo "  --timeout $TIMEOUT"
 echo
 
 echo "=== Test Summary ==="
@@ -145,7 +144,7 @@ if [ -f "$PREDICTIONS_PATH" ]; then
     echo "🎉 All checks passed! The workflow should run successfully."
     echo
     echo "To run the actual evaluation, execute:"
-    echo "$MICROMAMBA_PATH run -n swebench_hal python -m swebench.harness.run_evaluation --dataset_name princeton-nlp/SWE-bench_Lite --predictions_path \"$PREDICTIONS_PATH\" --max_workers $MAX_WORKERS --run_id $RUN_ID --timeout $TIMEOUT --verbose"
+    echo "$MICROMAMBA_PATH run -n swebench_hal python -m swebench.harness.run_evaluation --dataset_name princeton-nlp/SWE-bench_Lite --predictions_path \"$PREDICTIONS_PATH\" --max_workers $MAX_WORKERS --run_id $RUN_ID --timeout $TIMEOUT"
 else
     echo "✗ Predictions file: MISSING"
     echo

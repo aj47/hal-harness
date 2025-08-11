@@ -122,8 +122,7 @@ jobs:
           --predictions_path "$PREDICTIONS_PATH" \
           --max_workers ${{ github.event.inputs.max_workers }} \
           --run_id ${{ github.event.inputs.run_id }} \
-          --timeout ${{ github.event.inputs.timeout }} \
-          --verbose
+          --timeout ${{ github.event.inputs.timeout }}
     
     - name: Check evaluation results
       run: |
