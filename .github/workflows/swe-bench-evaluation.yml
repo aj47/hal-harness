@@ -48,17 +48,21 @@ jobs:
     
     - name: Install Micromamba
       run: |
-        curl -Ls https://micro.mamba.pm/api/attach/1.5.8/linux-64 | tar -xvj bin/micromamba
-        chmod +x bin/micromamba
+        # Download and install micromamba using the official installer
+        curl -Ls https://micro.mamba.pm/install.sh | bash -s -- -b -p ~/micromamba
+        # Add to PATH for this session
+        export PATH="~/micromamba/bin:$PATH"
+        # Initialize micromamba
+        ~/micromamba/bin/micromamba shell init -s bash -p ~/micromamba
         # Verify installation
-        ./bin/micromamba --version
+        ~/micromamba/bin/micromamba --version
     
     - name: Create evaluation environment
       run: |
-        ./bin/micromamba create -y -n swebench_hal python=3.11
-        ./bin/micromamba run -n swebench_hal pip install -e src/swebench
+        ~/micromamba/bin/micromamba create -y -n swebench_hal python=3.11
+        ~/micromamba/bin/micromamba run -n swebench_hal pip install -e src/swebench
         # Verify installation
-        ./bin/micromamba run -n swebench_hal python -c "import swebench; print('SWE-bench installed successfully')"
+        ~/micromamba/bin/micromamba run -n swebench_hal python -c "import swebench; print('SWE-bench installed successfully')"
     
     - name: Verify predictions file exists
       run: |
@@ -83,7 +87,7 @@ jobs:
         echo "Timeout: ${{ github.event.inputs.timeout }}"
         echo "Predictions path: $PREDICTIONS_PATH"
         
-        ./bin/micromamba run -n swebench_hal python -m swebench.harness.run_evaluation \
+        ~/micromamba/bin/micromamba run -n swebench_hal python -m swebench.harness.run_evaluation \
           --dataset_name princeton-nlp/SWE-bench_Lite \
           --predictions_path "$PREDICTIONS_PATH" \
           --max_workers ${{ github.event.inputs.max_workers }} \
